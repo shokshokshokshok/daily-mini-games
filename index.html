@@ -18,6 +18,7 @@
   .hint { min-height:24px; color:var(--muted); font-size:14px; margin-bottom:18px; }
   button { width:100%; border:0; border-radius:18px; padding:18px 16px; font-size:20px; font-weight:800; cursor:pointer; background:#f4f4f8; color:#111118; }
   button:active { transform:scale(.985); }
+  .share-primary { margin-top:18px; background:#f4f4f8; color:#111118; font-size:17px; padding:15px; }
   .secondary { margin-top:10px; background:transparent; color:var(--text); border:1px solid var(--line); font-size:15px; padding:14px; }
   .result { margin-top:20px; display:none; }
   .big { font-size:24px; font-weight:800; margin-bottom:6px; }
@@ -40,7 +41,9 @@
     <div id="result" class="result">
       <div id="grade" class="big"></div>
       <div id="delta" class="delta"></div>
-      <button id="shareBtn" class="secondary">結果をコピー</button>
+      <button id="xShareBtn" class="share-primary">Xで結果をシェア</button>
+      <button id="nativeShareBtn" class="secondary">共有する</button>
+      <button id="copyBtn" class="secondary">結果をコピー</button>
     </div>
     <div id="best" class="best"></div>
   </div>
@@ -57,7 +60,9 @@
   const grade = document.getElementById('grade');
   const delta = document.getElementById('delta');
   const bestEl = document.getElementById('best');
-  const shareBtn = document.getElementById('shareBtn');
+  const xShareBtn = document.getElementById('xShareBtn');
+  const nativeShareBtn = document.getElementById('nativeShareBtn');
+  const copyBtn = document.getElementById('copyBtn');
 
   let running = false;
   let startTime = 0;
@@ -118,13 +123,46 @@
     }
   });
 
-  shareBtn.addEventListener('click', async () => {
+  function shareText() {
     const err = Math.abs(last - 5);
-    const text = `5.000秒チャレンジ\n結果: ${last.toFixed(3)}秒\n誤差: ${err.toFixed(3)}秒`;
+    return `5.000秒チャレンジで ${last.toFixed(3)}秒！\n誤差は ${err.toFixed(3)}秒でした。\n\n5.000秒ぴったり狙える？`;
+  }
+
+  xShareBtn.addEventListener('click', () => {
+    const text = encodeURIComponent(shareText());
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'noopener,noreferrer');
+  });
+
+  nativeShareBtn.addEventListener('click', async () => {
+    const data = {
+      title: '5.000秒チャレンジ',
+      text: shareText(),
+      url: window.location.href
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(data);
+      } catch (e) {
+        // User cancelled or sharing failed: do nothing.
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${data.text}\n${data.url}`);
+        nativeShareBtn.textContent = 'コピーしました';
+        setTimeout(() => nativeShareBtn.textContent = '共有する', 1200);
+      } catch {
+        prompt('コピーしてください', `${data.text}\n${data.url}`);
+      }
+    }
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    const text = `${shareText()}\n${window.location.href}`;
     try {
       await navigator.clipboard.writeText(text);
-      shareBtn.textContent = 'コピーしました';
-      setTimeout(() => shareBtn.textContent = '結果をコピー', 1200);
+      copyBtn.textContent = 'コピーしました';
+      setTimeout(() => copyBtn.textContent = '結果をコピー', 1200);
     } catch {
       prompt('コピーしてください', text);
     }
