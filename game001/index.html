@@ -1,1 +1,466 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>体内時計チャレンジ</title>
+<meta name="description" content="別のことをしながら、時計を見ずに時間を当てるゲーム。">
+<style>
+:root{
+  --bg:#fff8ec; --panel:#ffffff; --panel2:#f6f9ff; --text:#20222a;
+  --muted:#707586; --line:#e4e7ee; --button:#78a9ff; --ink:#ffffff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{min-height:100vh;display:flex;justify-content:center;padding:24px 16px 44px;background:
+radial-gradient(circle at 15% 10%, #fff1c9 0, transparent 24%),
+radial-gradient(circle at 85% 0%, #e8f2ff 0, transparent 28%),
+var(--bg)}
+button{font:inherit}
+.app{width:min(580px,100%)}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.brand{font-weight:850;letter-spacing:-.02em}
+.level{font-size:13px;color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 14px 34px rgba(70,82,110,.10)}
+.hidden{display:none!important}
+h1{font-size:clamp(30px,8.5vw,46px);line-height:1.08;letter-spacing:-.04em;margin:0 0 14px}
+h2{font-size:30px;letter-spacing:-.03em;margin:0}
+p{margin:0}.muted{color:var(--muted)}
+.lead{line-height:1.7;margin-bottom:22px}
+.rules{display:grid;gap:9px;margin:18px 0 22px}
+.rule{background:var(--panel2);border-radius:15px;padding:13px 14px;display:flex;gap:11px;line-height:1.45}
+.rule b{min-width:20px}
+.primary,.secondary,.answer{border:0;border-radius:16px;cursor:pointer;min-height:52px;font-weight:800}
+.primary{width:100%;padding:15px 16px;background:linear-gradient(180deg,#86b5ff,#6d9df1);color:var(--ink);font-size:18px;box-shadow:0 6px 0 rgba(69,112,188,.16)}
+.secondary{width:100%;padding:13px;background:#fff;color:var(--text);border:1px solid var(--line);margin-top:10px}
+.primary:active,.secondary:active,.answer:active{transform:scale(.985)}
+.game-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:16px}
+.target{font-size:13px;color:var(--muted)}
+.target strong{display:block;color:var(--text);font-size:36px;line-height:1;margin-top:4px}
+.stats{text-align:right;color:var(--muted);font-size:13px;line-height:1.7}
+.task{min-height:240px;background:linear-gradient(180deg,#f8fbff,#f3f7ff);border:1px solid #e7edf8;border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.task-label{font-size:14px;color:var(--muted);margin-bottom:12px;min-height:20px}
+.question{font-size:clamp(29px,9vw,48px);font-weight:850;letter-spacing:-.035em;line-height:1.15;min-height:58px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.answers{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.answer{background:var(--button);color:var(--ink);font-size:19px;padding:13px;min-width:0;overflow-wrap:anywhere;box-shadow:0 4px 0 rgba(69,112,188,.18)}
+.answer.wrong{animation:shake .17s linear}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.stop{margin-top:15px;font-size:20px}
+.note{text-align:center;color:var(--muted);font-size:12px;margin-top:10px;min-height:18px}
+.result-main{text-align:center;padding:8px 0 12px}
+.reaction{font-size:38px;font-weight:900;letter-spacing:-.04em;margin-bottom:8px}
+.actual{font-size:58px;font-weight:900;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.error{color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
+.scoreline{font-size:54px;font-weight:900;letter-spacing:-.05em;margin-top:8px}
+.scoreline small{font-size:18px;color:var(--muted);font-weight:700;letter-spacing:0}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.summary-box{background:var(--panel2);border-radius:16px;padding:14px}
+.summary-box .num{font-size:27px;font-weight:850;font-variant-numeric:tabular-nums;margin-top:4px}
+.summary-box .sub{color:var(--muted);font-size:11px;margin-top:2px}
+.mini-results{display:grid;gap:8px;margin:18px 0}
+.mini-row{display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:8px;background:var(--panel2);border-radius:13px;padding:11px 12px;font-size:14px}
+.mini-row .val{font-variant-numeric:tabular-nums}
+.shape-line{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap}
+.shape{width:38px;height:38px;display:inline-block;background:currentColor}
+.circle{border-radius:50%}.triangle{width:0;height:0;background:transparent;border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:36px solid currentColor}.diamond{transform:rotate(45deg);width:30px;height:30px;margin:5px}
+.color-dot{font-size:50px;line-height:1}
+.footer{text-align:center;color:#8a8f9f;font-size:12px;margin-top:15px}
+@media(max-width:380px){.card{padding:18px}.task{min-height:225px;padding:16px}.actual{font-size:50px}.answer{font-size:17px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top">
+    <div class="brand">体内時計チャレンジ</div>
+    <div id="topLevel" class="level">LEVEL 1 / 5</div>
+  </div>
 
+  <section id="intro" class="card">
+    <h1>別のことをしながら、<br>時間を当ててください。</h1>
+    <p class="lead muted">時計は表示されません。問題を解きながら時間を数えて、目標時間だと思った瞬間にSTOP。</p>
+    <div class="rules">
+      <div class="rule"><b>1</b><span>STARTと同時に頭の中で時間を数える</span></div>
+      <div class="rule"><b>2</b><span>その間も、出てくる問題を解き続ける</span></div>
+      <div class="rule"><b>3</b><span>時間の正確さと問題の処理、両方でスコアが決まる</span></div>
+    </div>
+    <button id="startGame" class="primary" type="button">はじめる</button>
+  </section>
+
+  <section id="game" class="card hidden">
+    <div class="game-head">
+      <div class="target">目標<strong id="targetText">5秒</strong></div>
+      <div class="stats"><div id="problemCount">0問</div><div id="correctCount">0正解</div></div>
+    </div>
+    <div class="task">
+      <div id="taskLabel" class="task-label"></div>
+      <div id="question" class="question"></div>
+      <div id="answers" class="answers"></div>
+    </div>
+    <button id="stopBtn" class="primary stop" type="button">STOP</button>
+    <div class="note">時間は表示されません</div>
+  </section>
+
+  <section id="levelResult" class="card hidden">
+    <div class="result-main">
+      <div id="reaction" class="reaction">ないす</div>
+      <div id="actualTime" class="actual">5.031秒</div>
+      <div id="errorText" class="error">目標との差 +0.031秒</div>
+    </div>
+    <div id="levelDetail" class="summary-grid"></div>
+    <button id="nextLevel" class="primary" type="button">次のレベルへ</button>
+  </section>
+
+  <section id="finalResult" class="card hidden">
+    <div class="result-main">
+      <div id="finalReaction" class="reaction">ないす</div>
+      <div class="muted">総合スコア</div>
+      <div class="scoreline"><span id="totalScore">82</span><small> / 100</small></div>
+    </div>
+
+    <div id="allResults" class="mini-results"></div>
+
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="muted">時間</div>
+        <div id="timingScore" class="num">88</div>
+        <div class="sub">目標時間への近さ</div>
+      </div>
+      <div class="summary-box">
+        <div class="muted">ながら力</div>
+        <div id="taskScore" class="num">76</div>
+        <div class="sub">問題の量と正確さ</div>
+      </div>
+    </div>
+
+    <button id="xShare" class="primary" type="button">Xで結果をシェア</button>
+    <button id="retry" class="secondary" type="button">もう一度あそぶ</button>
+  </section>
+
+  <div class="footer">時計は見ないでね</div>
+</main>
+
+<script>
+(() => {
+  const levels = [
+    {target:5,  goal:2,  pool:['add','parity']},
+    {target:10, goal:4,  pool:['add','sub','mul','parity','prime']},
+    {target:20, goal:7,  pool:['add','sub','mul','prime','largest','secondLargest','shapeCount','sequence']},
+    {target:30, goal:10, pool:['mul','prime','secondLargest','shapeCount','sequence','opposite','stroop','compareExpr']},
+    {target:60, goal:18, pool:['add','sub','mul','prime','notPrime','secondLargest','shapeCount','oddOneShape','sequence','opposite','stroop','compareExpr','letterCount']}
+  ];
+
+  const primes = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47];
+  const composites = [4,6,8,9,10,12,14,15,16,18,20,21,22,24,25,26,27,28,30,32,33,34,35,36,38,39,40,42,44,45,46,48,49];
+
+  const $ = id => document.getElementById(id);
+  const sections = [$('intro'),$('game'),$('levelResult'),$('finalResult')];
+
+  let levelIndex=0, startTime=0, active=false, currentCorrect=null;
+  let totalProblems=0, correctProblems=0, results=[];
+
+  function show(el){sections.forEach(s=>s.classList.add('hidden'));el.classList.remove('hidden')}
+  function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+  function pick(a){return a[rand(0,a.length-1)]}
+  function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+  function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+  function choicesAround(correct, spread=8){
+    const set=new Set([correct]);
+    while(set.size<4){
+      const n=correct+rand(-spread,spread);
+      if(n>=0)set.add(n);
+    }
+    return shuffle([...set]);
+  }
+
+  function primeTask(negative=false){
+    const p=pick(primes.filter(n=>n>5));
+    const wrong=shuffle(composites.filter(n=>Math.abs(n-p)<15)).slice(0,3);
+    if(!negative) return {label:'素数を押す', q:'', correct:p, choices:shuffle([p,...wrong])};
+    const c=pick(composites.filter(n=>n>5));
+    const ps=shuffle(primes.filter(n=>Math.abs(n-c)<15 && n>5)).slice(0,3);
+    return {label:'素数ではないものを押す', q:'', correct:c, choices:shuffle([c,...ps])};
+  }
+
+  function shapeMarkup(kind){
+    if(kind==='●') return '<span class="shape circle"></span>';
+    if(kind==='▲') return '<span class="triangle"></span>';
+    if(kind==='◆') return '<span class="shape diamond"></span>';
+    return '<span class="shape"></span>';
+  }
+
+  function makeTask(type){
+    if(type==='add'){
+      const a=rand(3,55),b=rand(3,55),c=a+b;
+      return {label:'計算',q:`${a} + ${b}`,correct:c,choices:choicesAround(c,9)};
+    }
+    if(type==='sub'){
+      const a=rand(15,85),b=rand(3,a-2),c=a-b;
+      return {label:'計算',q:`${a} − ${b}`,correct:c,choices:choicesAround(c,9)};
+    }
+    if(type==='mul'){
+      const a=rand(2,9),b=rand(2,9),c=a*b;
+      return {label:'計算',q:`${a} × ${b}`,correct:c,choices:choicesAround(c,12)};
+    }
+    if(type==='parity'){
+      const wantEven=Math.random()<.5;
+      let correct=rand(7,48);
+      if((correct%2===0)!==wantEven) correct++;
+      const wrong=[];
+      while(wrong.length<3){
+        const n=rand(6,50);
+        if(((n%2===0)===wantEven)||n===correct||wrong.includes(n))continue;
+        wrong.push(n);
+      }
+      return {label:wantEven?'偶数を押す':'奇数を押す',q:'',correct,choices:shuffle([correct,...wrong])};
+    }
+    if(type==='prime') return primeTask(false);
+    if(type==='notPrime') return primeTask(true);
+
+    if(type==='largest'||type==='secondLargest'){
+      const vals=[];
+      while(vals.length<4){const n=rand(10,99);if(!vals.includes(n))vals.push(n)}
+      const sorted=[...vals].sort((a,b)=>b-a);
+      const correct=type==='largest'?sorted[0]:sorted[1];
+      return {label:type==='largest'?'一番大きい数字を押す':'2番目に大きい数字を押す',q:'',correct,choices:shuffle(vals)};
+    }
+
+    if(type==='shapeCount'){
+      const kinds=['■','●','▲','◆'];
+      const target=pick(kinds);
+      const arr=Array.from({length:rand(7,10)},()=>pick(kinds));
+      if(!arr.includes(target))arr[rand(0,arr.length-1)]=target;
+      const count=arr.filter(x=>x===target).length;
+      const labelName={'■':'四角','●':'丸','▲':'三角','◆':'ひし形'}[target];
+      return {
+        label:`${labelName}はいくつ？`,
+        qHtml:`<div class="shape-line">${arr.map(shapeMarkup).join('')}</div>`,
+        correct:count,
+        choices:choicesAround(count,2).filter((v,i,a)=>v>0&&a.indexOf(v)===i).slice(0,4)
+      };
+    }
+
+    if(type==='oddOneShape'){
+      const kinds=['■','●','▲','◆'];
+      const common=pick(kinds);
+      const odd=pick(kinds.filter(x=>x!==common));
+      const vals=shuffle([common,common,common,odd]);
+      return {
+        label:'ひとつだけ違う形を押す',
+        q:'',
+        correct:odd,
+        choices:vals.map((v,i)=>({value:v+'_'+i, logical:v, html:shapeMarkup(v)})),
+        compareLogical:true
+      };
+    }
+
+    if(type==='sequence'){
+      const mode=rand(0,2);
+      let seq,correct;
+      if(mode===0){const s=rand(1,5),d=rand(2,7);seq=[s,s+d,s+2*d,s+3*d];correct=s+4*d}
+      else if(mode===1){const s=rand(1,4),m=pick([2,3]);seq=[s,s*m,s*m*m,s*m*m*m];correct=s*m*m*m*m}
+      else{const a=rand(1,5),b=rand(1,5);seq=[a,b,a+b,a+2*b];correct=2*a+3*b}
+      return {label:'次の数字は？',q:seq.join('　')+'　?',correct,choices:choicesAround(correct,8)};
+    }
+
+    if(type==='opposite'){
+      const dirs=['↑','→','↓','←'],d=pick(dirs);
+      const opp={'↑':'↓','↓':'↑','←':'→','→':'←'}[d];
+      return {label:'反対向きを押す',q:d,correct:opp,choices:shuffle(dirs)};
+    }
+
+    if(type==='stroop'){
+      const colors=[
+        {name:'赤',css:'#e45d5d'},{name:'青',css:'#5f8de8'},
+        {name:'緑',css:'#62b978'},{name:'黄',css:'#e1c44f'}
+      ];
+      const word=pick(colors), ink=pick(colors.filter(c=>c.name!==word.name));
+      return {
+        label:'文字ではなく、色を押す',
+        q:word.name,
+        qColor:ink.css,
+        correct:ink.name,
+        choices:shuffle(colors.map(c=>c.name))
+      };
+    }
+
+    if(type==='compareExpr'){
+      let a=rand(2,9),b=rand(2,9),c=rand(10,45),d=rand(2,18);
+      const left={text:`${a}×${b}`,value:a*b}, right={text:`${c}+${d}`,value:c+d};
+      if(left.value===right.value) return makeTask('compareExpr');
+      const correct=left.value>right.value?left.text:right.text;
+      return {label:'答えが大きい方を押す',q:'',correct,choices:shuffle([left.text,right.text])};
+    }
+
+    if(type==='letterCount'){
+      const chars=['あ','か','さ','た'];
+      const target=pick(chars);
+      const arr=Array.from({length:rand(9,13)},()=>pick(chars));
+      const count=arr.filter(x=>x===target).length;
+      return {label:`「${target}」はいくつ？`,q:arr.join(' '),correct:count,choices:choicesAround(count,2).filter(v=>v>0).slice(0,4)};
+    }
+
+    return makeTask('add');
+  }
+
+  function normalizeChoices(task){
+    let choices=task.choices || [];
+    while(choices.length<4 && typeof task.correct==='number'){
+      const n=Math.max(1, task.correct+rand(-3,3));
+      if(!choices.includes(n))choices.push(n);
+    }
+    return shuffle(choices.slice(0,4));
+  }
+
+  function renderTask(){
+    if(!active)return;
+    const type=pick(levels[levelIndex].pool);
+    const t=makeTask(type);
+    currentCorrect=t;
+    $('taskLabel').textContent=t.label;
+    $('question').style.color=t.qColor||'';
+    if(t.qHtml) $('question').innerHTML=t.qHtml;
+    else $('question').textContent=t.q||'';
+    $('answers').innerHTML='';
+
+    normalizeChoices(t).forEach(choice=>{
+      const b=document.createElement('button');
+      b.type='button'; b.className='answer';
+
+      if(typeof choice==='object'){
+        if(choice.html)b.innerHTML=choice.html;
+        else b.textContent=choice.text ?? choice.value;
+        b.dataset.value=choice.value;
+        if(choice.logical!==undefined)b.dataset.logical=choice.logical;
+      }else{
+        b.textContent=choice;
+        b.dataset.value=choice;
+      }
+      b.addEventListener('click',()=>answer(b));
+      $('answers').appendChild(b);
+    });
+  }
+
+  function answer(btn){
+    if(!active)return;
+    totalProblems++;
+    const t=currentCorrect;
+    const candidate=t.compareLogical ? btn.dataset.logical : btn.dataset.value;
+    const ok=String(candidate)===String(t.correct);
+    if(ok){
+      correctProblems++;
+      updateStats();
+      renderTask();
+    }else{
+      updateStats();
+      btn.classList.remove('wrong'); void btn.offsetWidth; btn.classList.add('wrong');
+      setTimeout(renderTask,170);
+    }
+  }
+
+  function updateStats(){
+    $('problemCount').textContent=`${totalProblems}問`;
+    $('correctCount').textContent=`${correctProblems}正解`;
+  }
+
+  function timingPoints(error,target){
+    return Math.max(0,Math.round(100*(1-error/(target*0.15))));
+  }
+
+  function taskPoints(correct,total,goal){
+    if(total===0)return 0;
+    const volume=Math.min(1,correct/goal);
+    const accuracy=correct/total;
+    return Math.round(100*volume*(0.55+0.45*accuracy));
+  }
+
+  function levelWord(score){
+    if(score>=92)return 'やったね';
+    if(score>=80)return 'ないす';
+    if(score>=65)return 'おしい';
+    return 'むずいね';
+  }
+
+  function startLevel(){
+    active=true; totalProblems=0; correctProblems=0;
+    const lv=levels[levelIndex];
+    $('topLevel').textContent=`LEVEL ${levelIndex+1} / 5`;
+    $('targetText').textContent=`${lv.target}秒`;
+    updateStats(); show($('game')); renderTask();
+    startTime=performance.now();
+  }
+
+  function stopLevel(){
+    if(!active)return;
+    active=false;
+    const lv=levels[levelIndex];
+    const elapsed=(performance.now()-startTime)/1000;
+    const error=Math.abs(elapsed-lv.target);
+    const tScore=timingPoints(error,lv.target);
+    const qScore=taskPoints(correctProblems,totalProblems,lv.goal);
+    const score=Math.round(tScore*.65+qScore*.35);
+    const signed=elapsed-lv.target;
+
+    results.push({
+      level:levelIndex+1,target:lv.target,elapsed,error,
+      correct:correctProblems,total:totalProblems,
+      timingScore:tScore,taskScore:qScore,score
+    });
+
+    $('reaction').textContent=levelWord(score);
+    $('actualTime').textContent=`${elapsed.toFixed(3)}秒`;
+    $('errorText').textContent=`目標との差 ${signed>=0?'+':'−'}${Math.abs(signed).toFixed(3)}秒`;
+    $('levelDetail').innerHTML=`
+      <div class="summary-box"><div class="muted">時間</div><div class="num">${tScore}</div><div class="sub">目標時間への近さ</div></div>
+      <div class="summary-box"><div class="muted">ながら力</div><div class="num">${qScore}</div><div class="sub">${correctProblems}正解 / ${totalProblems}回答</div></div>
+    `;
+    $('nextLevel').textContent=levelIndex===4?'結果を見る':'次のレベルへ';
+    show($('levelResult'));
+  }
+
+  function renderFinal(){
+    const total=Math.round(results.reduce((s,r)=>s+r.score,0)/results.length);
+    const tAvg=Math.round(results.reduce((s,r)=>s+r.timingScore,0)/results.length);
+    const qAvg=Math.round(results.reduce((s,r)=>s+r.taskScore,0)/results.length);
+
+    $('totalScore').textContent=total;
+    $('timingScore').textContent=tAvg;
+    $('taskScore').textContent=qAvg;
+    $('finalReaction').textContent=levelWord(total);
+
+    $('allResults').innerHTML=results.map(r=>{
+      const sign=r.elapsed-r.target>=0?'+':'−';
+      return `<div class="mini-row">
+        <strong>Lv.${r.level}</strong>
+        <span>${r.target}秒 → <span class="val">${r.elapsed.toFixed(2)}秒</span></span>
+        <span class="muted">${r.score}点</span>
+      </div>`;
+    }).join('');
+    $('topLevel').textContent='FINISH';
+    show($('finalResult'));
+  }
+
+  function shareText(){
+    const total=Math.round(results.reduce((s,r)=>s+r.score,0)/results.length);
+    const lines=results.map(r=>`${r.target}秒 → ${r.elapsed.toFixed(2)}秒`).join('\n');
+    return `体内時計チャレンジ ${total}/100\n\n${lines}`;
+  }
+
+  $('startGame').addEventListener('click',startLevel);
+  $('stopBtn').addEventListener('click',stopLevel);
+  $('nextLevel').addEventListener('click',()=>{
+    if(levelIndex===4)renderFinal();
+    else{levelIndex++;startLevel()}
+  });
+  $('retry').addEventListener('click',()=>{
+    levelIndex=0;results=[];$('topLevel').textContent='LEVEL 1 / 5';show($('intro'));
+  });
+  $('xShare').addEventListener('click',()=>{
+    const text=encodeURIComponent(shareText());
+    const url=encodeURIComponent(window.location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`,'_blank','noopener,noreferrer');
+  });
+})();
+</script>
+</body>
+</html>
