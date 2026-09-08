@@ -1,1 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PHOTO MATCH</title>
+<meta name="description" content="Match brightness, contrast, saturation and warmth by eye">
+<style>
+:root{
+  --bg:#1b1b20;
+  --card:#24242b;
+  --line:#41414b;
+  --line-soft:#34343d;
+  --text:#f3f3f6;
+  --muted:#aaaab5;
+  --muted2:#7e7e89;
+  --accent:#f2f2f5;
+  --black:#17171b;
+  --gold:#f0ce6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text)}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;
+  padding:0 14px 34px;
+}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.page{width:min(760px,100%);margin:0 auto}
 
+/* HOME */
+.home{padding-top:28px}
+.home-brand{text-align:center;margin-bottom:28px}
+.logo-line{display:inline-flex;align-items:center;gap:11px}
+.logo{
+  width:18px;height:18px;border-radius:50%;
+  background:conic-gradient(#ff6d6d 0 18%,#ffd45e 18% 36%,#70d67a 36% 54%,#59bcec 54% 72%,#9b7cff 72% 88%,#ff76bd 88%);
+}
+.home h1{margin:0;font-size:24px;font-weight:850;letter-spacing:-.035em}
+.subtitle{margin:13px 0 0;color:var(--muted);font-size:14px;line-height:1.7}
+
+.mode-list{display:grid;gap:14px}
+.mode-card{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:linear-gradient(180deg,#26262d,#232329);
+  padding:17px 18px;
+  color:var(--text);
+  text-align:left;
+  transition:.12s ease;
+}
+.mode-card:hover{background:#292930;border-color:#52525e;transform:translateY(-1px)}
+.mode-card:active{transform:translateY(0)}
+.mode-name{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:18px;font-weight:850;letter-spacing:-.02em
+}
+.mode-arrow{color:var(--muted2);font-size:20px;font-weight:400}
+.mode-desc{color:var(--muted);font-size:13px;line-height:1.6;margin-top:7px}
+.best{color:var(--muted);font-size:12px;margin-top:9px}
+
+.small-home{
+  text-align:center;color:#74747d;font-size:11px;line-height:1.7;margin-top:22px
+}
+
+/* GAME HEADER */
+.game{padding-top:16px}
+.game-head{
+  height:52px;
+  display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;gap:8px;margin-bottom:12px
+}
+.back{
+  justify-self:start;border:0;background:transparent;color:var(--muted);
+  padding:7px 4px;font-size:13px
+}
+.game-title{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.game-stats{
+  justify-self:end;display:flex;align-items:center;gap:11px;
+  color:var(--muted);font-size:12px;white-space:nowrap
+}
+.game-stats b{color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.timer{
+  min-width:52px;text-align:right;font-size:17px!important;font-weight:850!important;
+}
+.timer.low{color:#ff8f8f!important}
+
+/* PHOTOS */
+.compare-card{
+  border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px
+}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.photo-label{
+  margin-bottom:7px;font-size:12px;color:var(--muted);
+  display:flex;align-items:center;justify-content:space-between
+}
+.photo-label strong{color:var(--text);font-size:13px}
+.frame{
+  position:relative;overflow:hidden;width:100%;aspect-ratio:3/2;border-radius:9px;
+  background:#111;box-shadow:0 0 0 1px rgba(255,255,255,.06)
+}
+.frame img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  user-select:none;pointer-events:none
+}
+.temp{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light}
+.photo-hint{text-align:center;color:var(--muted2);font-size:11px;margin-top:10px}
+
+/* CONTROLS */
+.adjust-card{
+  margin-top:12px;border:1px solid var(--line);border-radius:14px;
+  background:var(--card);overflow:hidden
+}
+.adjust-row{
+  min-height:67px;display:grid;grid-template-columns:96px minmax(0,1fr) 52px;
+  gap:10px;align-items:center;padding:10px 15px;border-bottom:1px solid var(--line-soft)
+}
+.adjust-row:last-child{border-bottom:0}
+.adjust-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.lock{
+  display:none;
+  padding:2px 5px;border-radius:5px;background:#3a3a43;color:#b9b9c3;
+  font-size:9px;font-weight:700
+}
+.adjust-row.fixed .lock{display:inline-block}
+.adjust-row.fixed{opacity:.62}
+.adjust-row.fixed .range{pointer-events:none}
+.value{
+  justify-self:end;min-width:46px;text-align:right;color:var(--muted);
+  font-size:12px;font-variant-numeric:tabular-nums
+}
+.slider-wrap{position:relative;min-width:0;height:28px;display:flex;align-items:center}
+.zero{
+  position:absolute;left:50%;top:7px;width:1px;height:14px;background:rgba(255,255,255,.28);
+  transform:translateX(-50%);pointer-events:none;z-index:3
+}
+.range{
+  -webkit-appearance:none;appearance:none;width:100%;height:28px;margin:0;background:transparent
+}
+.range::-webkit-slider-runnable-track{
+  height:7px;border-radius:999px;background:var(--track);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)
+}
+.range::-moz-range-track{
+  height:7px;border-radius:999px;background:var(--track);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.10)
+}
+.range::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:20px;height:20px;margin-top:-6.5px;
+  border-radius:50%;background:#eeeef2;border:2px solid #1b1b20;
+  box-shadow:0 0 0 1px rgba(255,255,255,.22),0 2px 5px rgba(0,0,0,.35)
+}
+.range::-moz-range-thumb{
+  width:17px;height:17px;border-radius:50%;background:#eeeef2;border:2px solid #1b1b20
+}
+#brightness{--track:linear-gradient(90deg,#111 0%,#505055 48%,#f3f3f3 100%)}
+#contrast{--track:linear-gradient(90deg,#8e8e93 0%,#6e6e74 45%,#111 100%)}
+#saturation{--track:linear-gradient(90deg,#7f7f84 0%,#9e747b 19%,#d96e70 38%,#dcb04f 57%,#68a972 76%,#527bc6 100%)}
+#temperature{--track:linear-gradient(90deg,#477fc8 0%,#7da7d8 26%,#bcbcc0 50%,#d8ae76 74%,#d96f3e 100%)}
+
+.controls-bottom{display:grid;grid-template-columns:100px 1fr;gap:10px;margin-top:12px}
+.reset-btn,.judge-btn{height:48px;border-radius:12px;font-weight:800}
+.reset-btn{border:1px solid var(--line);background:transparent;color:var(--muted)}
+.judge-btn{border:0;background:var(--accent);color:var(--black)}
+
+/* RESULT */
+.result{padding-top:28px}
+.result-box{
+  border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden
+}
+.result-top{text-align:center;padding:26px 18px 23px}
+.result-grade{font-size:14px;color:var(--muted);font-weight:750;letter-spacing:.08em}
+.result-score{
+  margin-top:7px;font-size:52px;line-height:1;font-weight:900;letter-spacing:-.055em;
+  font-variant-numeric:tabular-nums
+}
+.result-score span{color:var(--muted);font-size:16px;font-weight:600;letter-spacing:0}
+.result-label{margin-top:9px;color:var(--muted);font-size:13px}
+.diff-list{border-top:1px solid var(--line-soft)}
+.diff-row{
+  display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;
+  min-height:47px;padding:7px 15px;border-bottom:1px solid var(--line-soft);font-size:12px
+}
+.diff-row:last-child{border-bottom:0}
+.diff-name{font-weight:700}
+.diff-values{color:var(--muted)}
+.diff-values b{color:var(--text);font-weight:650}
+.diff-score{color:var(--muted);font-variant-numeric:tabular-nums}
+.next-btn{
+  width:100%;height:50px;margin-top:12px;border:0;border-radius:12px;
+  background:var(--accent);color:var(--black);font-weight:850
+}
+
+/* FINAL */
+.final{padding-top:28px}
+.final-box{
+  border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden
+}
+.final-main{text-align:center;padding:29px 18px 25px}
+.new-best{
+  display:none;width:max-content;margin:0 auto 9px;padding:5px 9px;border-radius:999px;
+  color:#1b1b20;background:var(--gold);font-size:10px;font-weight:850;letter-spacing:.04em
+}
+.new-best.show{display:block}
+.final-title{font-size:14px;color:var(--muted)}
+.final-score{
+  margin-top:6px;font-size:57px;line-height:1;font-weight:900;letter-spacing:-.055em;
+  font-variant-numeric:tabular-nums
+}
+.final-score span{color:var(--muted);font-size:16px;font-weight:600;letter-spacing:0}
+.final-sub{color:var(--muted);font-size:12px;margin-top:10px}
+.summary-grid{
+  border-top:1px solid var(--line-soft);
+  display:grid;grid-template-columns:repeat(3,1fr)
+}
+.summary-cell{
+  text-align:center;padding:15px 6px;border-right:1px solid var(--line-soft)
+}
+.summary-cell:last-child{border-right:0}
+.summary-cell .k{color:var(--muted2);font-size:10px}
+.summary-cell .v{margin-top:4px;font-size:19px;font-weight:850;font-variant-numeric:tabular-nums}
+.rounds{
+  border-top:1px solid var(--line-soft);display:grid;grid-template-columns:repeat(5,1fr)
+}
+.round-cell{text-align:center;padding:14px 5px;border-right:1px solid var(--line-soft)}
+.round-cell:last-child{border-right:0}
+.round-cell .n{color:var(--muted2);font-size:10px}
+.round-cell .s{margin-top:4px;font-size:19px;font-weight:850;font-variant-numeric:tabular-nums}
+.final-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.share,.again{height:49px;border-radius:12px;font-weight:850}
+.share{border:0;background:var(--accent);color:var(--black)}
+.again{border:1px solid var(--line);background:transparent;color:var(--text)}
+
+.flash{
+  position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-20px);
+  background:#f3f3f5;color:#17171b;border-radius:999px;padding:8px 13px;
+  font-weight:850;font-size:13px;opacity:0;pointer-events:none;transition:.18s ease;z-index:20
+}
+.flash.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:600px){
+  .photo-grid{gap:8px}
+  .compare-card{padding:10px}
+  .adjust-row{grid-template-columns:77px minmax(0,1fr) 43px;padding-left:11px;padding-right:11px;gap:7px}
+  .adjust-name{font-size:12px}
+  .game-stats{gap:7px}
+  .diff-row{grid-template-columns:77px 1fr auto;padding-left:12px;padding-right:12px}
+}
+</style>
+</head>
+<body>
+
+<div id="flash" class="flash"></div>
+
+<!-- HOME -->
+<main id="home" class="page home">
+  <div class="home-brand">
+    <div class="logo-line">
+      <span class="logo"></span>
+      <h1>PHOTO MATCH</h1>
+    </div>
+    <p class="subtitle">Match the photo by eye</p>
+  </div>
+
+  <div class="mode-list">
+    <button class="mode-card" data-mode="easy" type="button">
+      <div class="mode-name"><span>EASY</span><span class="mode-arrow">›</span></div>
+      <div class="mode-desc">2 controls locked</div>
+      <div class="best">BEST <span id="best-easy">—</span></div>
+    </button>
+
+    <button class="mode-card" data-mode="normal" type="button">
+      <div class="mode-name"><span>NORMAL</span><span class="mode-arrow">›</span></div>
+      <div class="mode-desc">1 control locked</div>
+      <div class="best">BEST <span id="best-normal">—</span></div>
+    </button>
+
+    <button class="mode-card" data-mode="hard" type="button">
+      <div class="mode-name"><span>HARD</span><span class="mode-arrow">›</span></div>
+      <div class="mode-desc">No controls locked</div>
+      <div class="best">BEST <span id="best-hard">—</span></div>
+    </button>
+
+    <button class="mode-card" data-mode="time" type="button">
+      <div class="mode-name"><span>TIME ATTACK</span><span class="mode-arrow">›</span></div>
+      <div class="mode-desc">60 seconds</div>
+      <div class="best">BEST <span id="best-time">—</span></div>
+    </button>
+
+    <button class="mode-card" data-mode="nightmare" type="button">
+      <div class="mode-name"><span>NIGHTMARE</span><span class="mode-arrow">›</span></div>
+      <div class="mode-desc">Score 96+ to continue · Max 100</div>
+      <div class="best">BEST <span id="best-nightmare">—</span></div>
+    </button>
+  </div>
+
+  <div class="small-home">Locked controls change each photo</div>
+</main>
+
+<!-- GAME -->
+<main id="game" class="page game hidden">
+  <header class="game-head">
+    <button id="backBtn" class="back" type="button">‹ MODES</button>
+    <div id="gameTitle" class="game-title">PHOTO MATCH</div>
+    <div class="game-stats">
+      <span id="roundStat"><b id="roundNum">1</b> / 5</span>
+      <span id="scoreStat"><b id="runningScore">0</b> pt</span>
+      <b id="timer" class="timer hidden">60.0</b>
+    </div>
+  </header>
+
+  <section class="compare-card">
+    <div class="photo-grid">
+      <div>
+        <div class="photo-label"><strong>TARGET</strong><span>REFERENCE</span></div>
+        <div class="frame">
+          <img id="targetImg" alt="ターゲット">
+          <div id="targetTemp" class="temp"></div>
+        </div>
+      </div>
+      <div>
+        <div class="photo-label"><strong>YOURS</strong><span>EDIT</span></div>
+        <div class="frame">
+          <img id="playerImg" alt="編集中">
+          <div id="playerTemp" class="temp"></div>
+        </div>
+      </div>
+    </div>
+    <div class="photo-hint">Match the right photo to the left</div>
+  </section>
+
+  <section class="adjust-card">
+    <div id="row-brightness" class="adjust-row">
+      <div class="adjust-name">BRIGHTNESS <span class="lock">LOCKED</span></div>
+      <div class="slider-wrap"><div class="zero"></div><input id="brightness" class="range" type="range" min="-50" max="50" value="0"></div>
+      <div id="brightnessVal" class="value">0</div>
+    </div>
+    <div id="row-contrast" class="adjust-row">
+      <div class="adjust-name">CONTRAST <span class="lock">LOCKED</span></div>
+      <div class="slider-wrap"><div class="zero"></div><input id="contrast" class="range" type="range" min="-50" max="50" value="0"></div>
+      <div id="contrastVal" class="value">0</div>
+    </div>
+    <div id="row-saturation" class="adjust-row">
+      <div class="adjust-name">SATURATION <span class="lock">LOCKED</span></div>
+      <div class="slider-wrap"><div class="zero"></div><input id="saturation" class="range" type="range" min="-50" max="50" value="0"></div>
+      <div id="saturationVal" class="value">0</div>
+    </div>
+    <div id="row-temperature" class="adjust-row">
+      <div class="adjust-name">WARMTH <span class="lock">LOCKED</span></div>
+      <div class="slider-wrap"><div class="zero"></div><input id="temperature" class="range" type="range" min="-50" max="50" value="0"></div>
+      <div id="temperatureVal" class="value">0</div>
+    </div>
+  </section>
+
+  <div class="controls-bottom">
+    <button id="resetBtn" class="reset-btn" type="button">RESET</button>
+    <button id="judgeBtn" class="judge-btn" type="button">CHECK</button>
+  </div>
+</main>
+
+<!-- RESULT -->
+<main id="result" class="page result hidden">
+  <section class="result-box">
+    <div class="result-top">
+      <div id="resultGrade" class="result-grade">ROUND SCORE</div>
+      <div class="result-score"><b id="roundScore">92</b> <span>/ 100</span></div>
+      <div id="resultLabel" class="result-label">MATCH SCORE</div>
+    </div>
+    <div id="diffList" class="diff-list"></div>
+  </section>
+  <button id="nextBtn" class="next-btn" type="button">NEXT</button>
+</main>
+
+<!-- FINAL -->
+<main id="final" class="page final hidden">
+  <section class="final-box">
+    <div class="final-main">
+      <div id="newBest" class="new-best">NEW BEST</div>
+      <div id="finalTitle" class="final-title">RESULT</div>
+      <div class="final-score"><b id="finalScore">438</b> <span id="finalUnit">/ 500</span></div>
+      <div id="finalSub" class="final-sub">PHOTO MATCH・ノーマル</div>
+    </div>
+
+    <div id="summaryGrid" class="summary-grid hidden"></div>
+    <div id="rounds" class="rounds"></div>
+  </section>
+
+  <div class="final-actions">
+    <button id="shareBtn" class="share" type="button">SHARE</button>
+    <button id="againBtn" class="again" type="button">RETRY</button>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const screens = ['home','game','result','final'];
+  const controls = ['brightness','contrast','saturation','temperature'];
+
+  const modeInfo = {
+    easy:{name:'EASY',fixedCount:2,type:'standard'},
+    normal:{name:'NORMAL',fixedCount:1,type:'standard'},
+    hard:{name:'HARD',fixedCount:0,type:'standard'},
+    time:{name:'TIME ATTACK',fixedCount:0,type:'time'},
+    nightmare:{name:'NIGHTMARE',fixedCount:0,type:'nightmare'}
+  };
+
+  function show(id){
+    screens.forEach(s => $(s).classList.toggle('hidden', s !== id));
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+
+  function svgUri(svg){
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  // Embedded assets only. No external image connection.
+  const photos = [
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#82c9ed"/><stop offset=".55" stop-color="#d3e8e8"/><stop offset="1" stop-color="#f6bf83"/></linearGradient><linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#4389a5"/><stop offset="1" stop-color="#245b71"/></linearGradient></defs><rect width="900" height="600" fill="url(#sky)"/><circle cx="690" cy="150" r="38" fill="#fff0aa"/><rect y="360" width="900" height="240" fill="url(#sea)"/><path d="M0 408 C150 386 270 430 395 404 C530 376 670 429 900 396 L900 600 L0 600Z" fill="#34748b" opacity=".68"/><path d="M70 393 L220 180 L355 393 Z" fill="#405567"/><path d="M160 393 L305 245 L442 393 Z" fill="#536a73"/><path d="M545 390 C590 325 655 298 733 318 C778 330 817 353 850 390Z" fill="#304e45"/></svg>`,
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#181d2f"/><stop offset="1" stop-color="#342447"/></linearGradient></defs><rect width="900" height="600" fill="url(#bg)"/><rect y="410" width="900" height="190" fill="#171921"/><circle cx="110" cy="150" r="38" fill="#ff5c8d" opacity=".45"/><circle cx="205" cy="115" r="32" fill="#49b7ff" opacity=".5"/><circle cx="755" cy="145" r="42" fill="#ffbd53" opacity=".5"/><rect x="100" y="230" width="130" height="220" rx="5" fill="#242938"/><rect x="260" y="170" width="155" height="280" rx="5" fill="#2c3143"/><rect x="445" y="120" width="110" height="330" rx="5" fill="#222839"/><rect x="590" y="205" width="180" height="245" rx="5" fill="#2a2d3d"/><g fill="#f0c979"><rect x="125" y="255" width="22" height="28"/><rect x="160" y="255" width="22" height="28"/><rect x="286" y="198" width="28" height="31"/><rect x="328" y="198" width="28" height="31"/><rect x="468" y="150" width="20" height="25"/><rect x="500" y="150" width="20" height="25"/></g></svg>`,
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><defs><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f2ece3"/><stop offset="1" stop-color="#d7c3ab"/></linearGradient></defs><rect width="900" height="600" fill="url(#wall)"/><rect y="365" width="900" height="235" fill="#b57a4e"/><ellipse cx="430" cy="360" rx="245" ry="110" fill="#ececea"/><ellipse cx="430" cy="350" rx="195" ry="76" fill="#c9503f"/><circle cx="350" cy="320" r="42" fill="#f2bf4d"/><circle cx="465" cy="313" r="46" fill="#efd170"/><circle cx="535" cy="370" r="39" fill="#eabf57"/><circle cx="380" cy="389" r="34" fill="#f0c957"/><path d="M320 360 C375 300 470 296 555 350" fill="none" stroke="#f7dd8a" stroke-width="19" stroke-linecap="round"/><path d="M300 272 C360 248 430 254 492 274" fill="none" stroke="#6ea653" stroke-width="18" stroke-linecap="round"/><rect x="690" y="190" width="86" height="215" rx="9" fill="#d9ebf2"/></svg>`,
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><defs><linearGradient id="w" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e3eef4"/><stop offset="1" stop-color="#becad2"/></linearGradient></defs><rect width="900" height="600" fill="url(#w)"/><rect y="400" width="900" height="200" fill="#a77954"/><rect x="90" y="95" width="270" height="250" rx="7" fill="#a7c7d5"/><rect x="108" y="112" width="234" height="216" fill="#d8edf1"/><path d="M110 310 C165 215 240 180 342 250 L342 328 L110 328Z" fill="#7ca07d"/><rect x="480" y="115" width="230" height="290" rx="5" fill="#f2ece5"/><rect x="505" y="145" width="180" height="220" rx="2" fill="#e7d6c3"/><circle cx="597" cy="247" r="62" fill="#cba16d"/><rect x="520" y="420" width="160" height="88" rx="11" fill="#ddd2c5"/><path d="M740 370 C705 270 710 170 760 110" fill="none" stroke="#4c7452" stroke-width="15"/><circle cx="760" cy="135" r="47" fill="#649366"/><circle cx="718" cy="205" r="42" fill="#6ea06b"/></svg>`,
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8fc8e7"/><stop offset="1" stop-color="#e7eef0"/></linearGradient></defs><rect width="900" height="600" fill="url(#sky)"/><path d="M0 470 L180 250 L315 420 L430 190 L605 425 L720 305 L900 485 L900 600 L0 600Z" fill="#556f7e"/><path d="M110 340 L180 250 L230 330 L196 315 L178 296 L162 324Z" fill="#f2f2ef"/><path d="M350 292 L430 190 L515 320 L472 292 L433 232 L402 284Z" fill="#f4f4f2"/><path d="M0 465 C180 420 300 476 430 442 C550 410 685 465 900 432 L900 600 L0 600Z" fill="#78966d"/><path d="M0 515 C175 492 337 532 475 505 C625 477 735 528 900 500 L900 600 L0 600Z" fill="#5f805d"/><circle cx="744" cy="110" r="40" fill="#ffe09a"/></svg>`
+  ].map(svgUri);
+
+  const baseTargets = [
+    {brightness:18, contrast:-10, saturation:22, temperature:16},
+    {brightness:-16, contrast:20, saturation:-12, temperature:-22},
+    {brightness:8, contrast:25, saturation:30, temperature:-10},
+    {brightness:20, contrast:-18, saturation:-20, temperature:24},
+    {brightness:-10, contrast:12, saturation:16, temperature:30}
+  ];
+
+  // Fixed-control pattern per photo. Deterministic for fair comparison.
+  const easyFixed = [
+    ['contrast','temperature'],
+    ['brightness','saturation'],
+    ['brightness','temperature'],
+    ['contrast','saturation'],
+    ['brightness','contrast']
+  ];
+  const normalFixed = [
+    ['temperature'],
+    ['saturation'],
+    ['contrast'],
+    ['brightness'],
+    ['temperature']
+  ];
+
+  let mode = 'normal';
+  let round = 0;
+  let total = 0;
+  let scores = [];
+  let fixedNow = [];
+  let timerId = null;
+  let timeEnd = 0;
+  let finished = false;
+
+  function format(v){ return v > 0 ? `+${v}` : String(v) }
+
+  function seededTarget(n){
+    if(n < 5) return baseTargets[n];
+    let x = (n + 1) * 92821 + 1723;
+    const next = () => {
+      x = (x * 1103515245 + 12345) & 0x7fffffff;
+      return x / 0x7fffffff;
+    };
+    const val = (lo,hi) => Math.round(lo + next()*(hi-lo));
+    return {
+      brightness:val(-30,30),
+      contrast:val(-30,30),
+      saturation:val(-34,34),
+      temperature:val(-32,32)
+    };
+  }
+
+  function targetForRound(n){ return seededTarget(n) }
+
+  function fixedForRound(n){
+    const i = n % 5;
+    if(mode === 'easy') return easyFixed[i];
+    if(mode === 'normal') return normalFixed[i];
+    return [];
+  }
+
+  function readValues(){
+    return Object.fromEntries(controls.map(k => [k,Number($(k).value)]));
+  }
+
+  function tempOverlay(el,v){
+    if(v === 0){
+      el.style.opacity='0';
+      el.style.background='transparent';
+      return;
+    }
+    if(v > 0){
+      el.style.background='#ff9d55';
+      el.style.opacity=String(Math.min(.38,v/50*.38));
+    }else{
+      el.style.background='#5a93e8';
+      el.style.opacity=String(Math.min(.36,Math.abs(v)/50*.36));
+    }
+  }
+
+  function imageFilter(v){
+    const b=1+v.brightness/100;
+    const c=1+v.contrast/100;
+    const s=Math.max(.15,1+v.saturation/70);
+    return `brightness(${b}) contrast(${c}) saturate(${s})`;
+  }
+
+  function renderPlayer(){
+    const v=readValues();
+    $('playerImg').style.filter=imageFilter(v);
+    tempOverlay($('playerTemp'),v.temperature);
+    controls.forEach(k=>$(`${k}Val`).textContent=format(v[k]));
+  }
+
+  function applyFixedState(){
+    controls.forEach(k=>{
+      const locked=fixedNow.includes(k);
+      $(`row-${k}`).classList.toggle('fixed',locked);
+      $(k).disabled=locked;
+    });
+  }
+
+  function resetControls(){
+    const t=targetForRound(round);
+    controls.forEach(k=>{
+      $(k).value=fixedNow.includes(k) ? t[k] : 0;
+    });
+    renderPlayer();
+  }
+
+  function updateHeader(){
+    const info=modeInfo[mode];
+    $('gameTitle').textContent=info.name;
+
+    if(info.type === 'standard'){
+      $('roundStat').classList.remove('hidden');
+      $('scoreStat').classList.remove('hidden');
+      $('timer').classList.add('hidden');
+      $('roundNum').textContent=round+1;
+      $('runningScore').textContent=total;
+    }else if(info.type === 'time'){
+      $('roundStat').classList.remove('hidden');
+      $('scoreStat').classList.remove('hidden');
+      $('timer').classList.remove('hidden');
+      $('roundNum').textContent=round+1;
+      $('runningScore').textContent=total;
+    }else{
+      $('roundStat').classList.remove('hidden');
+      $('scoreStat').classList.add('hidden');
+      $('timer').classList.add('hidden');
+      $('roundNum').textContent=round+1;
+    }
+  }
+
+  function loadRound(){
+    if(finished) return;
+    const t=targetForRound(round);
+    fixedNow=fixedForRound(round);
+    const src=photos[round%photos.length];
+
+    $('targetImg').src=src;
+    $('playerImg').src=src;
+    $('targetImg').style.filter=imageFilter(t);
+    tempOverlay($('targetTemp'),t.temperature);
+
+    applyFixedState();
+    resetControls();
+    updateHeader();
+    show('game');
+  }
+
+  function adjustedControls(){
+    return controls.filter(k=>!fixedNow.includes(k));
+  }
+
+  function pScore(user,target){
+    const d=Math.abs(user-target);
+    return Math.max(0,Math.round(100-d*1.5));
+  }
+
+  function grade(score){
+    if(score>=97) return 'S';
+    if(score>=92) return 'A';
+    if(score>=84) return 'B';
+    if(score>=72) return 'C';
+    return 'D';
+  }
+
+  function diffRow(name,key,u,t,parts){
+    if(fixedNow.includes(key)){
+      return `<div class="diff-row">
+        <div class="diff-name">${name}</div>
+        <div class="diff-values">LOCKED <b>${format(t[key])}</b></div>
+        <div class="diff-score">—</div>
+      </div>`;
+    }
+    return `<div class="diff-row">
+      <div class="diff-name">${name}</div>
+      <div class="diff-values">YOU <b>${format(u[key])}</b>　TARGET <b>${format(t[key])}</b></div>
+      <div class="diff-score">${parts[key]}pt</div>
+    </div>`;
+  }
+
+  function calculateRound(){
+    const u=readValues();
+    const t=targetForRound(round);
+    const active=adjustedControls();
+    const parts={};
+    active.forEach(k=>parts[k]=pScore(u[k],t[k]));
+    const score=Math.round(active.reduce((sum,k)=>sum+parts[k],0)/active.length);
+    return {u,t,parts,score};
+  }
+
+  function showFlash(text){
+    $('flash').textContent=text;
+    $('flash').classList.add('show');
+    setTimeout(()=>$('flash').classList.remove('show'),450);
+  }
+
+  function judge(){
+    if(finished) return;
+    const r=calculateRound();
+
+    if(mode === 'time'){
+      total += r.score;
+      scores.push(r.score);
+      showFlash(`+${r.score} pt`);
+      round++;
+      updateHeader();
+      setTimeout(()=>{ if(!finished) loadRound() },220);
+      return;
+    }
+
+    if(mode === 'nightmare'){
+      scores.push(r.score);
+      if(r.score <= 95){
+        finishNightmare(r.score);
+        return;
+      }
+      round++;
+      if(round >= 100){
+        finishNightmare(null,true);
+        return;
+      }
+      showFlash(`${r.score} pt`);
+      setTimeout(()=>loadRound(),220);
+      return;
+    }
+
+    total += r.score;
+    scores.push(r.score);
+
+    const g=grade(r.score);
+    $('resultGrade').textContent=`GRADE ${g}`;
+    $('roundScore').textContent=r.score;
+    $('resultLabel').textContent='MATCH SCORE';
+    $('diffList').innerHTML =
+      diffRow('BRIGHTNESS','brightness',r.u,r.t,r.parts)+
+      diffRow('CONTRAST','contrast',r.u,r.t,r.parts)+
+      diffRow('SATURATION','saturation',r.u,r.t,r.parts)+
+      diffRow('WARMTH','temperature',r.u,r.t,r.parts);
+
+    $('nextBtn').textContent=round===4?'RESULT':'NEXT';
+    show('result');
+  }
+
+  function storageKey(m){return `photoMatchBest_${m}`}
+
+  function readBest(m){
+    return Number(localStorage.getItem(storageKey(m)) || 0);
+  }
+
+  function writeBest(m,val){
+    const prev=readBest(m);
+    if(val>prev){
+      localStorage.setItem(storageKey(m),String(val));
+      return true;
+    }
+    return false;
+  }
+
+  function finishStandard(){
+    finished=true;
+    const isNew=writeBest(mode,total);
+    $('newBest').classList.toggle('show',isNew);
+    $('finalTitle').textContent='RESULT';
+    $('finalScore').textContent=total;
+    $('finalUnit').textContent='/ 500';
+    $('finalSub').textContent=`PHOTO MATCH · ${modeInfo[mode].name}`;
+    $('summaryGrid').classList.add('hidden');
+    $('rounds').classList.remove('hidden');
+    $('rounds').innerHTML=scores.map((s,i)=>`
+      <div class="round-cell"><div class="n">${i+1}枚目</div><div class="s">${s}</div></div>
+    `).join('');
+    refreshBest();
+    show('final');
+  }
+
+  function finishTime(){
+    if(finished) return;
+    finished=true;
+    clearInterval(timerId);
+    timerId=null;
+
+    const count=scores.length;
+    const avg=count ? Math.round(scores.reduce((a,b)=>a+b,0)/count) : 0;
+    const isNew=writeBest('time',total);
+
+    $('newBest').classList.toggle('show',isNew);
+    $('finalTitle').textContent='TIME UP';
+    $('finalScore').textContent=total;
+    $('finalUnit').textContent='pt';
+    $('finalSub').textContent='PHOTO MATCH · TIME ATTACK';
+
+    $('summaryGrid').classList.remove('hidden');
+    $('summaryGrid').innerHTML=`
+      <div class="summary-cell"><div class="k">PHOTOS</div><div class="v">${count}枚</div></div>
+      <div class="summary-cell"><div class="k">AVERAGE</div><div class="v">${avg}</div></div>
+      <div class="summary-cell"><div class="k">BEST</div><div class="v">${count?Math.max(...scores):0}</div></div>
+    `;
+
+    $('rounds').classList.add('hidden');
+    refreshBest();
+    show('final');
+  }
+
+  function finishNightmare(failScore=null,cleared=false){
+    finished=true;
+    const streak=cleared ? 100 : Math.max(0,scores.length-1);
+    const isNew=writeBest('nightmare',streak);
+
+    $('newBest').classList.toggle('show',isNew);
+    $('finalTitle').textContent=cleared?'100 CLEAR':'GAME OVER';
+    $('finalScore').textContent=streak;
+    $('finalUnit').textContent='STREAK';
+    $('finalSub').textContent=cleared
+      ? 'PHOTO MATCH · NIGHTMARE'
+      : `LAST SCORE ${failScore} / 100`;
+
+    $('summaryGrid').classList.remove('hidden');
+    $('summaryGrid').innerHTML=`
+      <div class="summary-cell"><div class="k">STREAK</div><div class="v">${streak}</div></div>
+      <div class="summary-cell"><div class="k">PASS</div><div class="v">96+</div></div>
+      <div class="summary-cell"><div class="k">TRIES</div><div class="v">${scores.length}</div></div>
+    `;
+    $('rounds').classList.add('hidden');
+    refreshBest();
+    show('final');
+  }
+
+  function startTimer(){
+    timeEnd=performance.now()+60000;
+    $('timer').classList.remove('low');
+
+    const tick=()=>{
+      if(finished) return;
+      const remain=Math.max(0,timeEnd-performance.now());
+      $('timer').textContent=(remain/1000).toFixed(1);
+      $('timer').classList.toggle('low',remain<=10000);
+      if(remain<=0) finishTime();
+    };
+
+    tick();
+    timerId=setInterval(tick,50);
+  }
+
+  function start(m){
+    clearInterval(timerId);
+    timerId=null;
+    mode=m;
+    round=0;
+    total=0;
+    scores=[];
+    finished=false;
+    loadRound();
+    if(mode==='time') startTimer();
+  }
+
+  function refreshBest(){
+    ['easy','normal','hard'].forEach(m=>{
+      const b=readBest(m);
+      $(`best-${m}`).textContent=b?`${b} / 500`:'—';
+    });
+    const tb=readBest('time');
+    $('best-time').textContent=tb?`${tb} pt`:'—';
+    const nb=readBest('nightmare');
+    $('best-nightmare').textContent=nb?`${nb} STREAK`:'—';
+  }
+
+  controls.forEach(k=>$(k).addEventListener('input',renderPlayer));
+
+  document.querySelectorAll('.mode-card').forEach(btn=>{
+    btn.addEventListener('click',()=>start(btn.dataset.mode));
+  });
+
+  $('resetBtn').addEventListener('click',resetControls);
+  $('judgeBtn').addEventListener('click',judge);
+
+  $('backBtn').addEventListener('click',()=>{
+    finished=true;
+    clearInterval(timerId);
+    timerId=null;
+    refreshBest();
+    show('home');
+  });
+
+  $('nextBtn').addEventListener('click',()=>{
+    if(round===4){
+      finishStandard();
+    }else{
+      round++;
+      loadRound();
+    }
+  });
+
+  $('againBtn').addEventListener('click',()=>start(mode));
+
+  $('shareBtn').addEventListener('click',()=>{
+    let resultText='';
+    if(mode==='time') resultText=`${total} pt`;
+    else if(mode==='nightmare'){
+      const streak=Math.min(100, scores.length && scores[scores.length-1] <= 95 ? scores.length-1 : scores.length);
+      resultText=`${streak} STREAK`;
+    }else resultText=`${total} / 500`;
+
+    const text=encodeURIComponent(`PHOTO MATCH · ${modeInfo[mode].name}\n${resultText}`);
+    const url=encodeURIComponent(location.href);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`,'_blank','noopener,noreferrer');
+  });
+
+  refreshBest();
+  show('home');
+})();
+</script>
+</body>
+</html>
