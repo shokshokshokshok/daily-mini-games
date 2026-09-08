@@ -23,6 +23,7 @@
   .result { margin-top:20px; display:none; }
   .big { font-size:24px; font-weight:800; margin-bottom:6px; }
   .delta { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .comment { margin:14px auto 0; min-height:52px; max-width:390px; font-size:18px; line-height:1.45; font-weight:700; }
   .best { margin-top:14px; color:var(--muted); font-size:13px; }
   .footer { margin-top:16px; color:#666673; font-size:12px; }
 </style>
@@ -41,6 +42,7 @@
     <div id="result" class="result">
       <div id="grade" class="big"></div>
       <div id="delta" class="delta"></div>
+      <div id="comment" class="comment"></div>
       <button id="xShareBtn" class="share-primary">Xで結果をシェア</button>
       <button id="nativeShareBtn" class="secondary">共有する</button>
       <button id="copyBtn" class="secondary">結果をコピー</button>
@@ -48,7 +50,7 @@
     <div id="best" class="best"></div>
   </div>
 
-  <div class="footer">狙うのは 5.000 秒</div>
+  <div class="footer">あなたの「5秒」は何秒？</div>
 </div>
 
 <script>
@@ -59,6 +61,7 @@
   const result = document.getElementById('result');
   const grade = document.getElementById('grade');
   const delta = document.getElementById('delta');
+  const comment = document.getElementById('comment');
   const bestEl = document.getElementById('best');
   const xShareBtn = document.getElementById('xShareBtn');
   const nativeShareBtn = document.getElementById('nativeShareBtn');
@@ -84,13 +87,100 @@
     raf = requestAnimationFrame(draw);
   }
 
-  function getGrade(err) {
-    if (err <= 0.005) return '神';
-    if (err <= 0.020) return 'ほぼ完璧';
-    if (err <= 0.050) return 'かなり惜しい';
-    if (err <= 0.100) return '惜しい';
-    if (err <= 0.250) return 'なかなか';
-    return 'もう一回';
+  function pick(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function getReaction(elapsed) {
+    const err = Math.abs(elapsed - 5);
+    const early = elapsed < 5;
+
+    if (err <= 0.001) return {
+      grade: '5.000!?!?!',
+      comment: pick([
+        '5秒のほうがあなたに合わせに来た。',
+        '人間のふりをした原子時計。',
+        'これは記録というより事件。'
+      ])
+    };
+    if (err <= 0.005) return {
+      grade: '人間やめてる',
+      comment: pick([
+        'その体内時計、どこで校正した？',
+        'ほぼ時報。怖い。',
+        '誤差という言葉に失礼なレベル。'
+      ])
+    };
+    if (err <= 0.020) return {
+      grade: 'ほぼ原子時計',
+      comment: pick([
+        'ここまで来ると「惜しい」より「怖い」。',
+        '体内時計、電波受信してる？',
+        '5秒をかなり飼い慣らしてる。'
+      ])
+    };
+    if (err <= 0.050) return {
+      grade: '普通に強い',
+      comment: pick([
+        '「たまたま」で片づけるには上手すぎる。',
+        '5秒の輪郭が見えてる。',
+        'これはちょっと自慢していい。'
+      ])
+    };
+    if (err <= 0.100) return {
+      grade: 'かなり惜しい',
+      comment: pick([
+        'あと一歩で時報側の人間。',
+        '5秒とはかなり仲がいい。',
+        '悔しくてもう一回やるには絶妙な距離。'
+      ])
+    };
+    if (err <= 0.250) return {
+      grade: 'なかなか',
+      comment: pick([
+        '人間としてはかなり正確。',
+        '時計なしなら十分すぎる。',
+        '地味にうまい。地味に悔しい。'
+      ])
+    };
+    if (err <= 0.500) return {
+      grade: '惜しい…のか？',
+      comment: pick([
+        '5秒とは面識がある。',
+        '体内時計、今日はちょっと寝坊。',
+        '惜しいと言えば惜しい。言わなければ普通。'
+      ])
+    };
+    if (err <= 1.000) return {
+      grade: early ? 'ちょっとせっかち' : 'ちょっと慎重',
+      comment: early
+        ? pick([
+            '5秒待てない性格が数字に出てる。',
+            'STOPへの気持ちが前のめり。',
+            '体内時計までせっかち。'
+          ])
+        : pick([
+            '止める決断にも熟考するタイプ。',
+            '慎重さが秒数にまで出てる。',
+            '5秒を少し名残惜しんだらしい。'
+          ])
+    };
+    if (err <= 2.000) return {
+      grade: '時差あり',
+      comment: pick([
+        'あなたの体内だけ別のタイムゾーン。',
+        '5秒って思ってたより長いらしい。',
+        '秒より雰囲気で時間を測ってる。'
+      ])
+    };
+    return {
+      grade: '自由',
+      comment: pick([
+        '5秒という概念から解放されてる。',
+        'もはや別の時間軸で生きてる。',
+        'ここまで来ると時計側を疑いたい。'
+      ])
+    };
   }
 
   mainBtn.addEventListener('click', () => {
@@ -109,7 +199,10 @@
       last = elapsed;
       timer.textContent = elapsed.toFixed(3);
       const err = Math.abs(elapsed - 5);
-      grade.textContent = getGrade(err);
+      const reaction = getReaction(elapsed);
+      grade.textContent = reaction.grade;
+      comment.textContent = reaction.comment;
+      comment.dataset.shareComment = reaction.comment;
       delta.textContent = `誤差 ${err.toFixed(3)} 秒`;
       result.style.display = 'block';
       mainBtn.textContent = 'もう一回';
@@ -125,7 +218,12 @@
 
   function shareText() {
     const err = Math.abs(last - 5);
-    return `5.000秒チャレンジで ${last.toFixed(3)}秒！\n誤差は ${err.toFixed(3)}秒でした。\n\n5.000秒ぴったり狙える？`;
+    const reactionText = comment.dataset.shareComment || '';
+    return `5.000秒チャレンジ：${last.toFixed(3)}秒
+誤差 ${err.toFixed(3)}秒
+「${reactionText}」
+
+あなたの体内時計は何秒？`;
   }
 
   xShareBtn.addEventListener('click', () => {
